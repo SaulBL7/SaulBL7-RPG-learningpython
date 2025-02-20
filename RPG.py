@@ -119,7 +119,7 @@ class Monster:
             self.dano = 4 * self.level
             self.hp = self.hp_max = 40 * self.level
             self.crit = 10 * (self.level / 2)
-            self.exp = 200 * self.level
+            self.exp = 20 * self.level
             self.gold = 30 * self.level
             self.status = 'comum'
 
@@ -907,7 +907,6 @@ def main():
                 break
             case _:
                 print("Opção inválida, tente novamente.")
-
 
 if __name__ == "__main__":
     main()
