@@ -908,7 +908,7 @@ def main():
             case _:
                 print("Opção inválida, tente novamente.")
 
-
+print('teste')
 if __name__ == "__main__":
     main()
 
