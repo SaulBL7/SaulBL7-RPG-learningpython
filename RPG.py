@@ -91,14 +91,6 @@ class Player:
         for magia, atributos in self.magias.items():
             print(f"{magia} ->", " | ".join(f"{atributo}:{descri}" for atributo, descri in atributos.items()))
 
-    # def addmagia(self):
-    #     self.magias["Seta de gelo"] = {
-    #         "level": 1,
-    #         "mana": 10,
-    #         "tooptip": ['int],
-    #         "dano": 3,
-    #         "exp": [0,10]
-    #     }
 
     def __str__(self):
         return f'Personagem: {self.name}, Classe: {self.classe},{self.level}'
@@ -127,7 +119,7 @@ class Monster:
             self.dano = 4 * self.level
             self.hp = self.hp_max = 40 * self.level
             self.crit = 10 * (self.level / 2)
-            self.exp = 20 * self.level
+            self.exp = 200 * self.level
             self.gold = 30 * self.level
             self.status = 'comum'
 
@@ -141,7 +133,8 @@ def fight(jogador, monstro):
         jogador.agir = False
         escolhas_disponiveis = {"1": "Atacar", "2": "Magia", "3": "Fugir"}
         print("-" * 30)
-        print(f'HP: {monstro.hp}/{monstro.hp_max} | Dano: {monstro.dano}')
+        print(f'MONSTRO -> HP: {monstro.hp}/{monstro.hp_max} | Dano: {monstro.dano}')
+        print(f'{jogador.name} -> HP: {jogador.hp}/{jogador.hp_max} | {jogador.recurso.upper()}: {jogador.mana}/{jogador.mana_max} ')
         print("-"* 30)
         escolha = input("Escolha uma ação(1-Atacar|2-Magia|3-Fugir): ").capitalize()
 
@@ -202,7 +195,7 @@ def regen(jogador):
 def exp_gold_gain(jogador, monstro):
     print(f'Voce recebeu {monstro.exp} de exp e {monstro.gold} de gold')
     jogador.gold += monstro.gold
-    jogador.exp += int(monstro.exp * jogador.exp_multi)
+    jogador.exp += int(monstro.exp * round(jogador.exp_multi, 1))
     while True:
         if jogador.exp >= jogador.exp_max:
             jogador.exp -= jogador.exp_max
@@ -267,7 +260,7 @@ def usar_magia(jogador,monstro):
                 print(f"Voce nao tem {jogador.recurso} suficiente para usa esta magia")
             else:
                 jogador.mana -= jogador.magias[escolha][jogador.recurso]
-                jogador.magias[escolha]['exp'][0] += int(10 * jogador.exp_multi)
+                jogador.magias[escolha]['exp'][0] += int(10 * round(jogador.exp_multi, 1))
                 if "dano" in jogador.magias[escolha]:
                     total = jogador.magias[escolha]["dano"]
                     for atributo in jogador.magias[escolha]["tooltip"]:
@@ -279,6 +272,13 @@ def usar_magia(jogador,monstro):
                              case 'int':
                                 tooltip += jogador.int
                     total *= tooltip
+                    if 'bonus' in jogador.magias[escolha]:
+                        match jogador.magias[escolha]['bonus']:
+                            case 'lifesteal':
+                                print('Voce utilizou uma habilidade com LIFESTEAL e vai se cura pelo dano causado')
+                                jogador.hp += total
+                                if jogador.hp > jogador.hp_max:
+                                    jogador.hp = jogador.hp_max
                     if jogador.crit != 0:
                         crit_check = critico_check(jogador)
                     if crit_check:
@@ -341,7 +341,7 @@ def monstro_ataca(jogador,monstro):
             if monstro.dano / 10 < 5:
                 jogador.mana += 5
             else:
-                jogador.mana += monstro.dano / 10
+                jogador.mana += int(monstro.dano / 10)
                 if jogador.mana > jogador.mana_max:
                     jogador.mana = jogador.mana_max
 
@@ -392,6 +392,7 @@ def levelup(jogador):
             else:
                 jogador.str += 1
                 jogador.int += 2
+    gain_magic(jogador)
 
     st = {"Mago": "Mana", "Paladino": "Mana", "Guerreiro": "Rage", "Ladino": "Energy"}
     print(f'\nVoce upou para o level {jogador.level}!!')
@@ -424,6 +425,61 @@ def levelup_magia(jogador, escolha):
         print(f"Agora ela tem {jogador.magias[escolha]['cura']} de cura base")
     print('#' * 30)
 
+def gain_magic(jogador):
+    match jogador.classe:
+        case 'Mago':
+            match jogador.level:
+                case 3:
+                    jogador.magias["Seta de gelo"] = {"level": 1,"mana": 15,"tooltip": ['int'],"dano": 4,"exp": [0,30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "SETA DE GELO"')
+                    print('%' * 30)
+                case 5:
+                    jogador.magias["Inferno"] = {"level": 1,"mana": 50,"tooltip": ['int'],"dano": 10,"exp": [0,30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "INFERNO"')
+                    print('%' * 30)
+        case 'Paladino':
+            match jogador.level:
+                case 3:
+                    jogador.magias["Consagração"] = {"level": 1, "mana": 15, "tooltip": ['int'], "dano": 6,"exp": [0, 30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "CONSAGRAÇÃO"')
+                    print('%' * 30)
+                case 5:
+                    jogador.magias["Julgamento"] = {"level": 1, "mana": 25, "tooltip": ['str','int'], "dano": 10, "exp": [0, 30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "JULGAMENTO"')
+                    print('%' * 30)
+        case 'Guerreiro':
+            match jogador.level:
+                case 3:
+                    jogador.magias["Golpe Feroz"] = {"level": 1, "rage": 40, "tooltip": ['str'], "dano": 10,
+                                                     "exp": [0, 30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "GOLPE FEROZ"')
+                    print('%' * 30)
+                case 5:
+                    jogador.magias["Golpe Sangrento"] = {"level": 1, "rage": 50, "tooltip": ['str'], "dano": 10,'bonus':'lifesteal',
+                                                    "exp": [0, 30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "REDEMOINHO"')
+                    print('%' * 30)
+        case 'Ladino':
+            match jogador.level:
+                case 3:
+                    jogador.magias["Estocada"] = {"level": 1, "energy": 50, "tooltip": ['dex'], "dano": 6,
+                                                     "exp": [0, 30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "ESTOCADA"')
+                    print('%' * 30)
+                case 5:
+                    jogador.magias["Golpe duplo"] = {"level": 1, "energy": 80, "tooltip": ['dex'], "dano": 10,
+                                                    "exp": [0, 30]}
+                    print('%' * 30)
+                    print('Voce aprendeu a magia "GOLPE DUPLO"')
+                    print('%' * 30)
+
 def loja(jogador):
     tipo = {'1': 'Arma', '2': 'Armadura', '3': 'Acessorio', '9': 'Sair'}
 
@@ -450,7 +506,8 @@ def loja_armas(jogador):
     lista_de_armas = {'Machado': {'str': 5, 'crit': 5, 'gold': 50},
                       'Adaga': {'dex': 5, 'crit': 10, 'gold': 50},
                       'Cajado': {'int': 5, 'crit': 5, 'gold': 50},
-                      'Espada': {'str': 3, 'int': 2, 'crit': 5, 'gold': 50}
+                      'Espada': {'str': 3, 'int': 2, 'crit': 5, 'gold': 50},
+                      'Espada de Treino': {'exp':1.2, 'gold': 50}
                       }
     while True:
         for num, arma in enumerate(lista_de_armas.keys()):
@@ -465,6 +522,8 @@ def loja_armas(jogador):
                         print(f"INT: {lista_de_armas[arma][desc]}", end=' | ')
                     case 'crit':
                         print(f"CRIT: {lista_de_armas[arma][desc]}%", end=' | ')
+                    case 'exp':
+                        print(f"Multiplicador de EXP: {lista_de_armas[arma][desc]}", end=' | ')
                     case 'gold':
                         print(f"Custo:  {lista_de_armas[arma][desc]} de gold")
             choice_list[num + 1] = arma
@@ -507,7 +566,8 @@ def loja_armor(jogador):
     lista_de_armaduras = {'Armadura de Ferro': {'hp': 200, 'str': -2, 'dex': -2, 'dodge': -50, 'gold': 100},
                           'Roupa de Couro': {'hp': 40, 'energy': 40, 'dex': 2, 'dodge': 10, 'gold': 100},
                           'Manto': {'hp': 20, 'mana': 100, 'int': 5, 'dodge': 5, 'gold': 100},
-                          'Armadura Leve': {'hp': 50, 'mana': 50, 'str': 2, 'int': 2, 'gold': 100}
+                          'Armadura Leve': {'hp': 50, 'mana': 50, 'str': 2, 'int': 2, 'gold': 100},
+                          'Roupa de Treino': {'hp': 20,'exp':1.2, 'gold': 100}
                           }
     while True:
         for num, armadura in enumerate(lista_de_armaduras.keys()):
@@ -528,6 +588,8 @@ def loja_armor(jogador):
                         print(f"CRIT: {lista_de_armaduras[armadura][desc]}%", end=' | ')
                     case 'dodge':
                         print(f"Dodge: {lista_de_armaduras[armadura][desc]}%", end=' | ')
+                    case 'exp':
+                        print(f"Multiplicador de EXP: {lista_de_armaduras[armadura][desc]}", end=' | ')
                     case 'gold':
                         print(f"Custo:  {lista_de_armaduras[armadura][desc]} de gold")
             choice_list[num + 1] = armadura
@@ -642,6 +704,8 @@ def equipar_arma(jogador, arma_nova , stats):
                     jogador.int -= valor
                 case 'crit':
                     jogador.crit -= valor
+                case 'exp':
+                    jogador.exp_multi -= valor - 1
 
     jogador.arma = {arma_nova: stats}
 
@@ -655,6 +719,8 @@ def equipar_arma(jogador, arma_nova , stats):
                 jogador.int += valor
             case 'crit':
                 jogador.crit += valor
+            case 'exp':
+                jogador.exp_multi += valor - 1
 
     print(f'Arma equipada: {arma_nova}')
     print(f'HP: {jogador.hp}/{jogador.hp_max} | {jogador.recurso.upper()}: {jogador.mana}/{jogador.mana_max}')
@@ -684,6 +750,8 @@ def equipar_armadura(jogador, armadura_nova , stats):
                     jogador.crit -= valor
                 case 'dodge':
                     jogador.dodge -= valor
+                case 'exp':
+                    jogador.exp_multi -= valor - 1
 
     jogador.armor = {armadura_nova: stats}
 
@@ -705,6 +773,9 @@ def equipar_armadura(jogador, armadura_nova , stats):
                 jogador.crit += valor
             case 'dodge':
                 jogador.dodge += valor
+            case 'exp':
+                jogador.exp_multi += valor - 1
+
 
     print(f'Armadura equipada: {armadura_nova}')
     print(f'HP: {jogador.hp}/{jogador.hp_max} | {jogador.recurso.upper()}: {jogador.mana}/{jogador.mana_max}')
@@ -735,8 +806,7 @@ def equipar_aces(jogador, aces_novo, stats):
                 case 'dodge':
                     jogador.dodge -= valor
                 case 'exp':
-                    jogador.aces[item_antiga]['exp'] -= 1
-                    jogador.exp_multi -= valor
+                    jogador.exp_multi -= valor - 1
 
     jogador.aces = {aces_novo: stats}
 
@@ -761,7 +831,7 @@ def equipar_aces(jogador, aces_novo, stats):
             case 'dodge':
                 jogador.dodge += valor
             case 'exp':
-                stats['exp'] -= 1
+                valor -= 1
                 jogador.exp_multi += valor
 
     print(f'Arma equipada: {aces_novo}')
@@ -835,9 +905,6 @@ def main():
             case '9' | 'Sair':
                 print("Saindo do jogo...")
                 break
-
-            # case '99':
-            #     jogador.addmagia()
             case _:
                 print("Opção inválida, tente novamente.")
 
